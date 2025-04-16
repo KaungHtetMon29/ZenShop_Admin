@@ -7,7 +7,9 @@ import {
   PanelLeft,
   Settings,
   ShoppingCart,
-  Users2
+  Truck,
+  Users2,
+  Wrench
 } from 'lucide-react';
 
 import {
@@ -78,8 +80,16 @@ function DesktopNav() {
           <ShoppingCart className="h-5 w-5" />
         </NavItem>
 
-        <NavItem href="/" label="Products">
+        <NavItem href="/products" label="Products">
           <Package className="h-5 w-5" />
+        </NavItem>
+
+        <NavItem href="#" label="Delivery">
+          <Truck className="h-5 w-5" />
+        </NavItem>
+
+        <NavItem href="#" label="Repair">
+          <Wrench className="h-5 w-5" />
         </NavItem>
 
         <NavItem href="/customers" label="Customers">
