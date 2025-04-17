@@ -1,0 +1,7 @@
+model admin {
+    id    String @id @default(cuid()) @map("_id")
+    email String @unique
+    name  String
+    image String
+    role  String
+}

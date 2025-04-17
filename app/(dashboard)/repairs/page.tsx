@@ -78,19 +78,17 @@ export default async function Page(props: {
         </div>
       </div>
       <DataTable
-        label="Products"
-        description="List of all products"
+        description="List of repairs"
         fields={[
-          'Image',
-          'ID',
-          'Name',
+          'Repair ID',
+          'Repair Status ID',
+          'Product',
           'Category',
-          'Stock',
-          'Price',
           'Created At',
           'Updated At',
-          'Updated By'
+          'Description'
         ]}
+        label="Repairs"
         products={product}
         offset={1}
         totalProducts={15}
