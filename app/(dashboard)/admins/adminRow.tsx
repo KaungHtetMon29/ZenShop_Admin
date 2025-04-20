@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,8 +9,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { banUser } from '../users/userActions';
+import { Prisma } from '@prisma/client';
+import { deleteAdmin } from './adminActions';
 
-export function Product({ product }: { product: any }) {
+export function AdminRow({ product }: { product: Prisma.adminGetPayload<{}> }) {
   return (
     <TableRow>
       <TableCell className="hidden sm:table-cell">
@@ -19,18 +21,19 @@ export function Product({ product }: { product: any }) {
           alt="Product image"
           className="aspect-square rounded-md object-cover"
           height="64"
-          src={product.imageUrl}
+          src={product.image}
           width="64"
         />
       </TableCell>
-      <TableCell className="font-medium">{product.name}</TableCell>
-      <TableCell>
-        <Badge variant="outline" className="capitalize">
-          {product.status}
+      <TableCell className="font-medium">{product.id}</TableCell>
+      <TableCell className="hidden md:table-cell">{`${product.name}`}</TableCell>
+      <TableCell className="hidden md:table-cell">{product.email}</TableCell>
+      <TableCell className="hidden md:table-cell">{product.role}</TableCell>
+      {/* <TableCell>
+        <Badge variant="outline" className="capitalize bg-green-600 text-white">
+          {product}
         </Badge>
-      </TableCell>
-      <TableCell className="hidden md:table-cell">{`$${product.price}`}</TableCell>
-      <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
+      </TableCell> */}
       {/* <TableCell className="hidden md:table-cell">
         {product.availableAt.toLocaleDateString('en-US')}
       </TableCell> */}
@@ -44,9 +47,11 @@ export function Product({ product }: { product: any }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
             <DropdownMenuItem>
-              <button type="submit">Delete</button>
+              <form action={deleteAdmin}>
+                <input type="hidden" name="adminId" value={product.id} />
+                <button type="submit">Delete</button>
+              </form>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

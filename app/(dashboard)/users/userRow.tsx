@@ -10,8 +10,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { banUser, deleteUser } from './userActions';
+import { Prisma } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
-export function Product({ product }: { product: any }) {
+export function UserRow({ product }: { product: Prisma.userGetPayload<{}> }) {
   return (
     <TableRow>
       <TableCell className="hidden sm:table-cell">
@@ -19,18 +22,21 @@ export function Product({ product }: { product: any }) {
           alt="Product image"
           className="aspect-square rounded-md object-cover"
           height="64"
-          src={product.imageUrl}
+          src={product.image}
           width="64"
         />
       </TableCell>
-      <TableCell className="font-medium">{product.name}</TableCell>
+      <TableCell className="font-medium">{product.id}</TableCell>
+      <TableCell className="hidden md:table-cell">{`${product.name}`}</TableCell>
+      <TableCell className="hidden md:table-cell">{product.email}</TableCell>
       <TableCell>
-        <Badge variant="outline" className="capitalize">
+        <Badge
+          variant="outline"
+          className={`capitalize ${product.status !== 'banned' ? 'bg-green-600' : 'bg-red-600'} text-white`}
+        >
           {product.status}
         </Badge>
       </TableCell>
-      <TableCell className="hidden md:table-cell">{`$${product.price}`}</TableCell>
-      <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
       {/* <TableCell className="hidden md:table-cell">
         {product.availableAt.toLocaleDateString('en-US')}
       </TableCell> */}
@@ -44,9 +50,20 @@ export function Product({ product }: { product: any }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
             <DropdownMenuItem>
-              <button type="submit">Delete</button>
+              <form action={banUser}>
+                <input type="hidden" name="userId" value={product.id} />
+                <input type="hidden" name="userStatus" value={product.status} />
+                <button type="submit">
+                  {product.status !== 'banned' ? 'Ban' : 'Allow'}
+                </button>
+              </form>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <form action={deleteUser}>
+                <input type="hidden" name="userId" value={product.id} />
+                <button type="submit">Delete</button>
+              </form>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

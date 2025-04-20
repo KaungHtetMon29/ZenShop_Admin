@@ -3,16 +3,17 @@ import { File, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '../DataTable';
 import {
-  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTrigger
 } from '@/components/ui/dialog';
-import { DialogTitle } from '@radix-ui/react-dialog';
+import { Dialog, DialogTitle } from '@radix-ui/react-dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import prisma from '@/lib/prisma';
+import { AdminRow } from './adminRow';
 
 export default async function Page(props: {
   searchParams: Promise<{ q: string; offset: string }>;
@@ -20,6 +21,7 @@ export default async function Page(props: {
   const searchParams = await props.searchParams;
   const search = searchParams.q ?? '';
   const offset = searchParams.offset ?? 0;
+  const admins = await prisma.admin.findMany();
   // const { products, newOffset, totalProducts } = await getProducts(
   //   search,
   //   Number(offset)
@@ -81,7 +83,7 @@ export default async function Page(props: {
                 Export
               </span>
             </Button>
-            <DialogTrigger>
+            <DialogTrigger asChild>
               <Button size="sm" className="h-8 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -89,41 +91,37 @@ export default async function Page(props: {
                 </span>
               </Button>
             </DialogTrigger>
-            <DeliInputDialog />
+            <AdminInputDialog />
           </div>
         </div>
-        {/* <DataTable
-          description="List of deliveries"
-          fields={['ID', 'Address', 'Create At', 'Order Id']}
-          label="Deliveries"
-          fetchData={product}
+        <DataTable
+          description="List of Users"
+          fields={['Image', 'User ID', 'Name', 'Email', 'Role']}
+          label="Users"
           offset={1}
           totalProducts={15}
-        /> */}
+        >
+          {admins.map((admin) => (
+            <AdminRow key={admin.id} product={admin} />
+          ))}
+        </DataTable>
       </Dialog>
     </>
   );
 }
 
-function DeliInputDialog() {
+function AdminInputDialog() {
   return (
     <DialogContent className="sm:max-w-[800px]">
       <DialogHeader>
-        <DialogTitle>Update Delivery</DialogTitle>
+        <DialogTitle>Add New Admin</DialogTitle>
         <DialogDescription>
-          Fill in the product details. Click save when you're done.
+          Fill in the admin data. Click save when you're done.
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-5 py-4">
-        {/* Add your form fields here */}
         <Input type="email" placeholder="User Email" />
-        <Input type="text" placeholder="Product" />
-        <div className="flex gap-2">
-          <Input type="text" placeholder="Repair Status" />
-          <Input type="text" placeholder="Category" />
-        </div>
-
-        <Textarea placeholder="Description" />
+        <Input type="text" placeholder="Name" />
       </div>
       <DialogFooter>
         <Button type="submit">Save Product</Button>

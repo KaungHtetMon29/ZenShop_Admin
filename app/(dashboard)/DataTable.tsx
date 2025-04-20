@@ -15,28 +15,28 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { Product } from './product';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import React from 'react';
 
 export function DataTable({
+  children,
   label,
   description,
   fields,
-  products,
   offset,
   totalProducts
 }: {
+  children: React.ReactNode;
   label: string;
   description: string;
   fields: string[];
-  products: any[];
   offset: number;
   totalProducts: number;
 }) {
   let router = useRouter();
-  let productsPerPage = 1;
+  let productsPerPage = 5;
 
   function prevPage() {
     router.back();
@@ -61,11 +61,7 @@ export function DataTable({
               ))}
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {products.map((product) => (
-              <Product key={product.id} product={product} />
-            ))}
-          </TableBody>
+          <TableBody>{children}</TableBody>
         </Table>
       </CardContent>
       <CardFooter>
