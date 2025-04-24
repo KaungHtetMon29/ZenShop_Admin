@@ -8,13 +8,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Edit, Delete, Trash2 } from 'lucide-react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Brand } from './page';
 import { deleteBrand } from './brandAction';
 import { DialogTrigger } from '@radix-ui/react-dialog';
 
-export function BrandRow({ product }: { product: Brand }) {
+interface BrandRowProps {
+  product: Brand;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+export function BrandRow({ product, onEdit, onDelete }: BrandRowProps) {
   return (
     <TableRow>
       <TableCell className="font-medium">{product.ID}</TableCell>
@@ -25,40 +31,13 @@ export function BrandRow({ product }: { product: Brand }) {
       <TableCell className="hidden md:table-cell">
         {product.UpdatedAt}
       </TableCell>
-      {/* <TableCell className="hidden md:table-cell">
-        {product.availableAt.toLocaleDateString('en-US')}
-      </TableCell> */}
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button aria-haspopup="true" size="icon" variant="ghost">
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DialogTrigger asChild>
-              <DropdownMenuItem>
-                Update
-                {/* <form action={() => {}}>
-                <input type="hidden" name="userId" value={product.id} />
-                <input type="hidden" name="userStatus" value={product.status} />
-                <button type="submit">
-                  {product.status !== 'banned' ? 'Ban' : 'Allow'}
-                </button>
-              </form> */}
-              </DropdownMenuItem>
-            </DialogTrigger>
-
-            <DropdownMenuItem>
-              <form action={deleteBrand}>
-                <input type="hidden" name="brandId" value={product.ID} />
-                <button type="submit">Delete</button>
-              </form>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <TableCell className="flex items-center">
+        <Button variant="ghost" size="sm" onClick={onEdit}>
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onDelete}>
+          <Trash2 className="h-4 w-4 text-red-500" />
+        </Button>
       </TableCell>
     </TableRow>
   );

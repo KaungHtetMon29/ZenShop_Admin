@@ -3,6 +3,7 @@ import {
   CheckCheck,
   Home,
   LineChart,
+  List,
   Package,
   Package2,
   PanelLeft,
@@ -89,7 +90,10 @@ function DesktopNav() {
           <CheckCheck className="h-5 w-5 mr-3" />
           <span>Brands</span>
         </NavItem>
-
+        <NavItem href="/categories" label="Categories">
+          <List className="h-5 w-5 mr-3" />
+          <span>Categories</span>
+        </NavItem>
         <NavItem href="/delivery" label="Delivery">
           <Truck className="h-5 w-5 mr-3" />
           <span>Delivery</span>

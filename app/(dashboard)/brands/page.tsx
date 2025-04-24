@@ -1,4 +1,5 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+'use client';
+
 import { File, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '../DataTable';
@@ -14,76 +15,131 @@ import {
 import { Input } from '@/components/ui/input';
 import { BrandRow } from './brandRow';
 import { addBrand } from './brandAction';
+import { useEffect, useState } from 'react';
 
 export type Brand = {
   ID: number;
   Name: string;
   CreatedAt: string;
   UpdatedAt: string;
+  Products: null;
 };
 
-export default async function Page(props: {
-  searchParams: Promise<{ q: string; offset: string }>;
-}) {
-  const searchParams = await props.searchParams;
-  const response = await fetch('http://localhost:8080/brands');
-  const data = await response.json();
-  const brands: Brand[] = data.data;
+export type BrandResponse = {
+  count: number;
+  data: Brand[];
+  status: string;
+};
 
-  // const { products, newOffset, totalProducts } = await getProducts(
-  //   search,
-  //   Number(offset)
-  // );
-  const product = [
-    {
-      invoice: 'INV001',
-      paymentStatus: 'Paid',
-      totalAmount: '$250.00',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      invoice: 'INV002',
-      paymentStatus: 'Pending',
-      totalAmount: '$150.00',
-      paymentMethod: 'PayPal'
-    },
-    {
-      invoice: 'INV003',
-      paymentStatus: 'Unpaid',
-      totalAmount: '$350.00',
-      paymentMethod: 'Bank Transfer'
-    },
-    {
-      invoice: 'INV004',
-      paymentStatus: 'Paid',
-      totalAmount: '$450.00',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      invoice: 'INV005',
-      paymentStatus: 'Paid',
-      totalAmount: '$550.00',
-      paymentMethod: 'PayPal'
-    },
-    {
-      invoice: 'INV006',
-      paymentStatus: 'Pending',
-      totalAmount: '$200.00',
-      paymentMethod: 'Bank Transfer'
-    },
-    {
-      invoice: 'INV007',
-      paymentStatus: 'Unpaid',
-      totalAmount: '$300.00',
-      paymentMethod: 'Credit Card'
+export default function Page() {
+  const [brands, setBrands] = useState<BrandResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentBrand, setCurrentBrand] = useState<Brand | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [brandToDelete, setBrandToDelete] = useState<Brand | null>(null);
+
+  // Function to fetch brands data
+  const fetchBrands = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/brands');
+      if (!response.ok) {
+        throw new Error(`Error fetching brands: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Fetched brands:', data);
+      setBrands(data);
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
-  console.log(brands);
+  };
+
+  // Initial data load
+  useEffect(() => {
+    fetchBrands();
+  }, []);
+
+  // Handler for form submission
+  const handleAddBrand = async (formData: FormData) => {
+    await addBrand(formData);
+    setDialogOpen(false);
+    fetchBrands(); // Refresh data after adding
+  };
+
+  // Handler for brand update
+  const handleUpdateBrand = async (formData: FormData) => {
+    try {
+      if (!currentBrand) return;
+
+      const brandId = currentBrand.ID;
+      const brandName = formData.get('brandName') as string;
+
+      const response = await fetch(`http://localhost:8080/brands/${brandId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ Name: brandName })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error updating brand: ${response.status}`);
+      }
+
+      setDialogOpen(false);
+      setCurrentBrand(null);
+      setIsEditing(false);
+      fetchBrands(); // Refresh data after updating
+    } catch (error) {
+      console.error('Error updating brand:', error);
+    }
+  };
+
+  // Function to open edit dialog
+  const openEditDialog = (brand: Brand) => {
+    setCurrentBrand(brand);
+    setIsEditing(true);
+    setDialogOpen(true);
+  };
+
+  // Function to handle brand deletion
+  const handleDeleteBrand = async () => {
+    try {
+      if (!brandToDelete) return;
+
+      const brandId = brandToDelete.ID;
+
+      const response = await fetch(`http://localhost:8080/brands/${brandId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error deleting brand: ${response.status}`);
+      }
+
+      setDeleteDialogOpen(false);
+      setBrandToDelete(null);
+      fetchBrands(); // Refresh data after deleting
+    } catch (error) {
+      console.error('Error deleting brand:', error);
+    }
+  };
+
+  // Function to open delete confirmation dialog
+  const openDeleteDialog = (brand: Brand) => {
+    setBrandToDelete(brand);
+    setDeleteDialogOpen(true);
+  };
+
   return (
     <>
-      <Dialog>
-        <div className="flex items-center">
-          <div className="ml-auto flex items-center gap-2">
+      <div className="flex items-center mb-4">
+        <div className="ml-auto flex items-center gap-2">
+          <Dialog>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="h-8 gap-1">
                 <File className="h-3.5 w-3.5" />
@@ -92,6 +148,17 @@ export default async function Page(props: {
                 </span>
               </Button>
             </DialogTrigger>
+          </Dialog>
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) {
+                setCurrentBrand(null);
+                setIsEditing(false);
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button size="sm" className="h-8 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
@@ -100,36 +167,90 @@ export default async function Page(props: {
                 </span>
               </Button>
             </DialogTrigger>
-          </div>
+            <DialogContent className="sm:max-w-[800px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {isEditing ? 'Edit Brand' : 'Add New Brand'}
+                </DialogTitle>
+                <DialogDescription>
+                  {isEditing
+                    ? "Update the brand details. Click save when you're done."
+                    : "Fill in the brand details. Click save when you're done."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-5 py-4">
+                <form
+                  action={isEditing ? handleUpdateBrand : handleAddBrand}
+                  className="flex flex-col gap-4"
+                >
+                  <Input
+                    name="brandName"
+                    type="text"
+                    placeholder="Brand Name"
+                    required
+                    defaultValue={currentBrand?.Name || ''}
+                  />
+                  <DialogFooter>
+                    <Button type="submit">
+                      {isEditing ? 'Update Brand' : 'Save Brand'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-        <DialogContent className="sm:max-w-[800px]">
-          <DialogHeader>
-            <DialogTitle>Add New Brand</DialogTitle>
-            <DialogDescription>
-              Fill in the brand details. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-5 py-4">
-            {/* Add your form fields here */}
-            <form action={addBrand} className="flex flex-col gap-4">
-              <Input name="brandName" type="text" placeholder="Brand Name" />
-              <DialogFooter>
-                <Button type="submit">Save Product</Button>
-              </DialogFooter>
-            </form>
-          </div>
-        </DialogContent>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center py-10">
+          <p>Loading...</p>
+        </div>
+      ) : brands && brands.data ? (
         <DataTable
-          description="List of Users"
-          fields={['Id', 'Brand Name', 'Creaded ']}
-          label="Users"
+          description="List of Brands"
+          fields={['Id', 'Brand Name', 'Created', 'Actions']}
+          label="Brands"
           offset={5}
-          totalProducts={data.count}
+          totalProducts={brands.count || 0}
         >
-          {brands.map((brand: Brand) => (
-            <BrandRow key={brand.ID} product={brand} />
+          {brands.data.map((brand: Brand) => (
+            <BrandRow
+              key={brand.ID}
+              product={brand}
+              onEdit={() => openEditDialog(brand)}
+              onDelete={() => openDeleteDialog(brand)}
+            />
           ))}
         </DataTable>
+      ) : (
+        <div className="py-10 text-center">
+          <p>No brands found. Add your first brand using the button above.</p>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the brand "{brandToDelete?.Name}"?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteBrand}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </>
   );

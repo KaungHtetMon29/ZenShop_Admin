@@ -29,6 +29,11 @@ export default {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
         search: ''
+      },
+      {
+        protocol: 'https',
+        hostname: 'zenshopkmd.s3.ap-southeast-1.amazonaws.com',
+        search: ''
       }
     ]
   }

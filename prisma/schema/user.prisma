@@ -4,4 +4,5 @@ model user {
     name  String
     image String
     status String @default("ok")
+    Address String  @default("")
 }
