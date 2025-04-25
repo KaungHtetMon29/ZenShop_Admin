@@ -94,7 +94,7 @@ function DesktopNav() {
           <List className="h-5 w-5 mr-3" />
           <span>Categories</span>
         </NavItem>
-        <NavItem href="/delivery" label="Delivery">
+        <NavItem href="/shipping" label="Shipping">
           <Truck className="h-5 w-5 mr-3" />
           <span>Delivery</span>
         </NavItem>
