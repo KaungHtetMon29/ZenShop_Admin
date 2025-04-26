@@ -1,79 +1,41 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+'use client';
+
+import { Suspense, useEffect, useState } from 'react';
 import { File, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '../DataTable';
-import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTrigger
-} from '@/components/ui/dialog';
-import { Dialog, DialogTitle } from '@radix-ui/react-dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import { getRepairs, Repair } from './repairAction';
+import { RepairRow } from './repairRow';
+import { RepairInputDialog } from './repairInputDialog';
+import { toast } from 'sonner';
 
-export default async function Page(props: {
-  searchParams: Promise<{ q: string; offset: string }>;
-}) {
-  const searchParams = await props.searchParams;
-  const search = searchParams.q ?? '';
-  const offset = searchParams.offset ?? 0;
-  // const { products, newOffset, totalProducts } = await getProducts(
-  //   search,
-  //   Number(offset)
-  // );
-  const product = [
-    {
-      invoice: 'INV001',
-      paymentStatus: 'Paid',
-      totalAmount: '$250.00',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      invoice: 'INV002',
-      paymentStatus: 'Pending',
-      totalAmount: '$150.00',
-      paymentMethod: 'PayPal'
-    },
-    {
-      invoice: 'INV003',
-      paymentStatus: 'Unpaid',
-      totalAmount: '$350.00',
-      paymentMethod: 'Bank Transfer'
-    },
-    {
-      invoice: 'INV004',
-      paymentStatus: 'Paid',
-      totalAmount: '$450.00',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      invoice: 'INV005',
-      paymentStatus: 'Paid',
-      totalAmount: '$550.00',
-      paymentMethod: 'PayPal'
-    },
-    {
-      invoice: 'INV006',
-      paymentStatus: 'Pending',
-      totalAmount: '$200.00',
-      paymentMethod: 'Bank Transfer'
-    },
-    {
-      invoice: 'INV007',
-      paymentStatus: 'Unpaid',
-      totalAmount: '$300.00',
-      paymentMethod: 'Credit Card'
+export default function RepairsPage() {
+  const [repairs, setRepairs] = useState<Repair[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function loadRepairs() {
+    setLoading(true);
+    try {
+      const data = await getRepairs();
+      setRepairs(data);
+    } catch (error) {
+      console.error('Error loading repairs:', error);
+      toast.error('Failed to load repairs');
+    } finally {
+      setLoading(false);
     }
-  ];
+  }
+
+  useEffect(() => {
+    loadRepairs();
+  }, []);
+
   return (
-    // <Tabs defaultValue="all">
-    // </Tabs>
-    <>
-      <Dialog>
-        <div className="flex items-center">
-          <div className="ml-auto flex items-center gap-2">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold tracking-tight">Repairs</h1>
+        <Dialog>
+          <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" className="h-8 gap-1">
               <File className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -84,56 +46,76 @@ export default async function Page(props: {
               <Button size="sm" className="h-8 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Add Product
+                  Add Repair
                 </span>
               </Button>
             </DialogTrigger>
-            <RepairInputDialog />
+          </div>
+          {/* Create Repair Dialog */}
+          <RepairInputDialog />
+        </Dialog>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center py-10">
+          <p>Loading repairs...</p>
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <div className="relative w-full overflow-auto">
+            <table className="w-full caption-bottom text-sm">
+              <thead className="[&_tr]:border-b">
+                <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    ID
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Status
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Customer
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Product
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Category
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Created
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Updated
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Description
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="[&_tr:last-child]:border-0">
+                {repairs.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="p-4 text-center text-muted-foreground"
+                    >
+                      No repairs found. Add your first repair using the button
+                      above.
+                    </td>
+                  </tr>
+                ) : (
+                  repairs.map((repair) => (
+                    <RepairRow key={repair.ID} repair={repair} />
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-        {/* <DataTable
-        DataRow={}
-          description="List of repairs"
-          fields={[
-            'Repair ID',
-            'Repair Status ID',
-            'Product',
-            'Category',
-            'Created At',
-            'Updated At',
-            'Description'
-          ]}
-          label="Repairs"
-          offset={1}
-          totalProducts={15}
-        /> */}
-      </Dialog>
-    </>
-  );
-}
-
-function RepairInputDialog() {
-  return (
-    <DialogContent className="sm:max-w-[800px]">
-      <DialogHeader>
-        <DialogTitle>Add New Repair</DialogTitle>
-        <DialogDescription>
-          Fill in the product details. Click save when you're done.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="grid gap-5 py-4">
-        {/* Add your form fields here */}
-        <Input type="email" placeholder="User Email" />
-        <Input type="text" placeholder="Product" />
-        <div className="flex gap-2">
-          <Input type="text" placeholder="Repair Status" />
-          <Input type="text" placeholder="Category" />
-        </div>
-        <Textarea placeholder="Description" />
-      </div>
-      <DialogFooter>
-        <Button type="submit">Save Product</Button>
-      </DialogFooter>
-    </DialogContent>
+      )}
+    </div>
   );
 }
