@@ -1,35 +1,38 @@
 'use server';
 
 import { auth } from '@/lib/auth';
+import { fetchWithAuth, fetchWithAuthJson } from '@/lib/fetchWithAuth';
 import { revalidatePath } from 'next/cache';
 import { ShippingResponse, Shipping } from './shipping';
 
-// Function to fetch all shipping records
-export async function fetchShipping(): Promise<ShippingResponse> {
+// Function to fetch all shipping records with pagination
+export async function fetchShipping(
+  page: number = 1,
+  limit: number = 5
+): Promise<ShippingResponse> {
+  // In a real app, you'd call your backend API with pagination params
   try {
-    const response = await fetch('http://localhost:8080/shipping');
-    if (!response.ok) {
-      throw new Error(`Error fetching shipping: ${response.status}`);
-    }
-    const data = await response.json();
+    const data = await fetchWithAuthJson<ShippingResponse>(
+      `http://localhost:8080/shipping?page=${page}&limit=${limit}`,
+      {
+        cache: 'no-store'
+      }
+    );
+
     return data;
   } catch (error) {
     console.error('Error fetching shipping records:', error);
-    throw error;
+    // Return empty data with pagination info on error
+    return { data: [], count: 0, page: page, limit: limit };
   }
 }
 
 // Function to fetch a specific shipping record by ID
 export async function fetchShippingById(shippingId: number): Promise<Shipping> {
   try {
-    const response = await fetch(
+    return await fetchWithAuthJson<Shipping>(
       `http://localhost:8080/shipping/${shippingId}`
     );
-    if (!response.ok) {
-      throw new Error(`Error fetching shipping: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
   } catch (error) {
     console.error(`Error fetching shipping with ID ${shippingId}:`, error);
     throw error;
@@ -41,14 +44,9 @@ export async function fetchShippingByOrderId(
   orderId: number
 ): Promise<Shipping> {
   try {
-    const response = await fetch(
+    return await fetchWithAuthJson<Shipping>(
       `http://localhost:8080/shipping/order/${orderId}`
     );
-    if (!response.ok) {
-      throw new Error(`Error fetching shipping for order: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
   } catch (error) {
     console.error(`Error fetching shipping for order ${orderId}:`, error);
     throw error;
@@ -75,7 +73,7 @@ export async function addShipping(formData: FormData) {
       CreatedAt: new Date().toISOString().split('T')[0]
     };
 
-    const response = await fetch('http://localhost:8080/shipping', {
+    const response = await fetchWithAuth('http://localhost:8080/shipping', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -114,7 +112,7 @@ export async function updateShipping(formData: FormData) {
       Phone: formData.get('phone')
     };
 
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `http://localhost:8080/shipping/${shippingId}`,
       {
         method: 'PUT',
@@ -140,7 +138,7 @@ export async function updateShipping(formData: FormData) {
 // Function to delete a shipping record
 export async function deleteShipping(shippingId: number) {
   try {
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `http://localhost:8080/shipping/${shippingId}`,
       {
         method: 'DELETE',

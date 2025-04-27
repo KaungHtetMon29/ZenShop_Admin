@@ -1,23 +1,34 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { File, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DataTable } from '../DataTable';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { getRepairs, Repair } from './repairAction';
+import { toast } from 'sonner';
+import { getRepairs, Repair, RepairResponse } from './repairAction';
 import { RepairRow } from './repairRow';
 import { RepairInputDialog } from './repairInputDialog';
-import { toast } from 'sonner';
+import { useSearchParams } from 'next/navigation';
 
 export default function RepairsPage() {
-  const [repairs, setRepairs] = useState<Repair[]>([]);
+  const searchParams = useSearchParams();
+  const page = Number(searchParams.get('page')) || 1;
+  const ITEMS_PER_PAGE = 5;
+
+  const [repairsData, setRepairsData] = useState<RepairResponse>({
+    data: [],
+    count: 0,
+    page: page,
+    limit: ITEMS_PER_PAGE
+  });
   const [loading, setLoading] = useState(true);
 
   async function loadRepairs() {
     setLoading(true);
     try {
-      const data = await getRepairs();
-      setRepairs(data);
+      const data = await getRepairs(page, ITEMS_PER_PAGE);
+      setRepairsData(data);
     } catch (error) {
       console.error('Error loading repairs:', error);
       toast.error('Failed to load repairs');
@@ -28,7 +39,7 @@ export default function RepairsPage() {
 
   useEffect(() => {
     loadRepairs();
-  }, []);
+  }, [page]); // Reload when the page changes
 
   return (
     <div className="space-y-4">
@@ -51,69 +62,54 @@ export default function RepairsPage() {
               </Button>
             </DialogTrigger>
           </div>
-          {/* Create Repair Dialog */}
-          <RepairInputDialog />
+          <RepairInputDialog onSuccess={loadRepairs} />
         </Dialog>
       </div>
 
       {loading ? (
         <div className="flex justify-center items-center py-10">
-          <p>Loading repairs...</p>
+          <p>Loading...</p>
         </div>
       ) : (
-        <div className="rounded-md border">
-          <div className="relative w-full overflow-auto">
-            <table className="w-full caption-bottom text-sm">
-              <thead className="[&_tr]:border-b">
-                <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    ID
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Customer
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Product
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Category
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Created
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Updated
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Description
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="[&_tr:last-child]:border-0">
-                {repairs.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={9}
-                      className="p-4 text-center text-muted-foreground"
-                    >
-                      No repairs found. Add your first repair using the button
-                      above.
-                    </td>
-                  </tr>
-                ) : (
-                  repairs.map((repair) => (
-                    <RepairRow key={repair.ID} repair={repair} />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="border rounded-md">
+          <DataTable
+            description="Manage and track product repairs"
+            fields={[
+              'ID',
+              'Status',
+              'Customer',
+              'Product',
+              'Category',
+              'Created',
+              'Updated',
+              'Description',
+              'Actions'
+            ]}
+            label="Repairs"
+            offset={(page - 1) * ITEMS_PER_PAGE + repairsData.data.length}
+            totalProducts={repairsData.count}
+            limit={ITEMS_PER_PAGE}
+          >
+            {repairsData.data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={9}
+                  className="p-4 text-center text-muted-foreground"
+                >
+                  No repairs found. Add your first repair using the button
+                  above.
+                </td>
+              </tr>
+            ) : (
+              repairsData.data.map((repair) => (
+                <RepairRow 
+                  key={repair.ID} 
+                  repair={repair} 
+                  onDataChange={loadRepairs}
+                />
+              ))
+            )}
+          </DataTable>
         </div>
       )}
     </div>

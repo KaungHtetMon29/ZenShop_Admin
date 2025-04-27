@@ -18,9 +18,19 @@ import {
   Shipping,
   ShippingResponse
 } from './shipping';
+import { useSearchParams } from 'next/navigation';
 
 export default function ShippingPage() {
-  const [shippings, setShippings] = useState<ShippingResponse | null>(null);
+  const searchParams = useSearchParams();
+  const page = Number(searchParams.get('page')) || 1;
+  const ITEMS_PER_PAGE = 5;
+
+  const [shippings, setShippings] = useState<ShippingResponse>({
+    data: [],
+    count: 0,
+    page: page,
+    limit: ITEMS_PER_PAGE
+  });
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentShipping, setCurrentShipping] = useState<Shipping | null>(null);
@@ -33,12 +43,12 @@ export default function ShippingPage() {
   // Initial data load
   useEffect(() => {
     loadShippings();
-  }, []);
+  }, [page]); // Reload when page changes
 
   const loadShippings = async () => {
     setLoading(true);
     try {
-      const data = await fetchShipping();
+      const data = await fetchShipping(page, ITEMS_PER_PAGE);
       setShippings(data);
     } catch (error) {
       console.error('Error loading shipping records:', error);
@@ -50,83 +60,80 @@ export default function ShippingPage() {
 
   // Handler for form submission
   const handleAddShipping = async (formData: FormData) => {
-    const result = await addShipping(formData);
-    if (result.success) {
+    try {
+      await addShipping(formData);
+      toast.success('Shipping added successfully');
       setDialogOpen(false);
       loadShippings();
-      toast.success('Shipping record added successfully');
-    } else {
-      toast.error('Failed to add shipping record');
+    } catch (error) {
+      console.error('Error adding shipping:', error);
+      toast.error('Failed to add shipping');
     }
   };
 
-  // Handler for shipping update
+  // Handler for updating shipping
   const handleUpdateShipping = async (formData: FormData) => {
-    const result = await updateShipping(formData);
-    if (result.success) {
+    try {
+      await updateShipping(formData);
+      toast.success('Shipping updated successfully');
       setDialogOpen(false);
       setCurrentShipping(null);
       setIsEditing(false);
       loadShippings();
-      toast.success('Shipping updated successfully');
-    } else {
+    } catch (error) {
+      console.error('Error updating shipping:', error);
       toast.error('Failed to update shipping');
     }
   };
 
-  // Function to open edit dialog
-  const openEditDialog = (shipping: Shipping) => {
-    setCurrentShipping(shipping);
-    setIsEditing(true);
-    setDialogOpen(true);
-  };
-
-  // Function to handle shipping deletion
+  // Handler for deleting shipping
   const handleDeleteShipping = async () => {
-    try {
-      if (!shippingToDelete) return;
+    if (!shippingToDelete) return;
 
-      const result = await deleteShipping(shippingToDelete.ID);
-      if (result.success) {
-        setDeleteDialogOpen(false);
-        setShippingToDelete(null);
-        loadShippings();
-        toast.success('Shipping deleted successfully');
-      } else {
-        toast.error('Failed to delete shipping');
-      }
+    try {
+      await deleteShipping(shippingToDelete.ID);
+      toast.success('Shipping deleted successfully');
+      setDeleteDialogOpen(false);
+      setShippingToDelete(null);
+      loadShippings();
     } catch (error) {
       console.error('Error deleting shipping:', error);
       toast.error('Failed to delete shipping');
     }
   };
 
-  // Function to open delete confirmation dialog
+  // Open the dialog for adding new shipping
+  const openAddDialog = () => {
+    setCurrentShipping(null);
+    setIsEditing(false);
+    setDialogOpen(true);
+  };
+
+  // Open the dialog for editing shipping
+  const openEditDialog = (shipping: Shipping) => {
+    setCurrentShipping(shipping);
+    setIsEditing(true);
+    setDialogOpen(true);
+  };
+
+  // Open the dialog for deleting shipping
   const openDeleteDialog = (shipping: Shipping) => {
     setShippingToDelete(shipping);
     setDeleteDialogOpen(true);
   };
 
   return (
-    <>
-      <div className="flex items-center mb-4">
-        <h1 className="text-3xl font-bold">Shipping</h1>
-        <div className="ml-auto flex items-center gap-2">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold tracking-tight">Shipping</h1>
+        <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="h-8 gap-1">
             <File className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Export
             </span>
           </Button>
-          <Button
-            size="sm"
-            className="h-8 gap-1"
-            onClick={() => {
-              setIsEditing(false);
-              setCurrentShipping(null);
-              setDialogOpen(true);
-            }}
-          >
+          <Button size="sm" className="h-8 gap-1" onClick={openAddDialog}>
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Add Shipping
@@ -138,13 +145,7 @@ export default function ShippingPage() {
       {/* Shipping Form Dialog */}
       <ShippingFormDialog
         open={dialogOpen}
-        onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) {
-            setCurrentShipping(null);
-            setIsEditing(false);
-          }
-        }}
+        onOpenChange={setDialogOpen}
         currentShipping={currentShipping}
         isEditing={isEditing}
         onSubmit={isEditing ? handleUpdateShipping : handleAddShipping}
@@ -170,8 +171,9 @@ export default function ShippingPage() {
             'Actions'
           ]}
           label="Shipping"
-          offset={shippings.data.length || 0}
-          totalProducts={shippings.count || 0}
+          offset={(page - 1) * ITEMS_PER_PAGE + shippings.data.length}
+          totalProducts={shippings.count}
+          limit={ITEMS_PER_PAGE}
         >
           {shippings.data.map((shipping: Shipping) => (
             <ShippingRow
@@ -185,8 +187,8 @@ export default function ShippingPage() {
       ) : (
         <div className="py-10 text-center">
           <p>
-            No shipping records found. Add your first shipping record using the
-            button above.
+            No shipping records found. Add your first shipping using the button
+            above.
           </p>
         </div>
       )}
@@ -198,6 +200,6 @@ export default function ShippingPage() {
         shippingId={shippingToDelete?.ID}
         onConfirmDelete={handleDeleteShipping}
       />
-    </>
+    </div>
   );
 }

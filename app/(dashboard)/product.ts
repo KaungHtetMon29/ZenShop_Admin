@@ -18,6 +18,7 @@ export interface Brand {
 
 export interface ProductResponse {
   data: Product[];
-  status: string;
   count: number;
+  page: number;
+  limit: number;
 }

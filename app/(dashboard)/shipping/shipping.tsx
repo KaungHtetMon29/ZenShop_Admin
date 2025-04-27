@@ -31,6 +31,8 @@ export interface Shipping {
 export interface ShippingResponse {
   data: Shipping[];
   count: number;
+  page: number;
+  limit: number;
 }
 
 interface ShippingFormDialogProps {

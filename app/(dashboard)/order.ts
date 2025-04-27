@@ -53,8 +53,9 @@ export interface Product {
 
 export interface OrderResponse {
   data: Order[];
-  status: string;
   count: number;
+  page: number;
+  limit: number;
 }
 
 export interface CheckoutRequest {

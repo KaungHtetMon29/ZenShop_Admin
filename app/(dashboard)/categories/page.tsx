@@ -24,7 +24,7 @@ import {
 import { File, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { CategoryRow } from './categoryRow';
-import { addCategory } from './categoryAction';
+import { addCategory, updateCategory, deleteCategory } from './categoryAction';
 import { DataTable } from '../DataTable';
 
 export interface Category {
@@ -91,26 +91,20 @@ export default function CategoryPage() {
       const categoryId = currentCategory.ID;
       const categoryName = formData.get('categoryName') as string;
 
-      const response = await fetch(
-        `http://localhost:8080/categories/${categoryId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ Name: categoryName })
-        }
-      );
+      const result = await updateCategory(categoryId, categoryName);
 
-      if (!response.ok) {
-        throw new Error(`Error updating category: ${response.status}`);
+      if (result.success) {
+        setDialogOpen(false);
+        setCurrentCategory(null);
+        setIsEditing(false);
+        fetchCategories(); // Refresh data after updating
+        toast.success('Category updated successfully');
+      } else {
+        toast.error(
+          'Failed to update category: ' +
+            (result.error?.toString() || 'Unknown error')
+        );
       }
-
-      setDialogOpen(false);
-      setCurrentCategory(null);
-      setIsEditing(false);
-      fetchCategories(); // Refresh data after updating
-      toast.success('Category updated successfully');
     } catch (error) {
       console.error('Error updating category:', error);
       toast.error('Failed to update category');
@@ -129,18 +123,10 @@ export default function CategoryPage() {
     try {
       if (!categoryToDelete) return;
 
-      const categoryId = categoryToDelete.ID;
+      const formData = new FormData();
+      formData.append('categoryId', categoryToDelete.ID.toString());
 
-      const response = await fetch(
-        `http://localhost:8080/categories/${categoryId}`,
-        {
-          method: 'DELETE'
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error deleting category: ${response.status}`);
-      }
+      await deleteCategory(formData);
 
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);

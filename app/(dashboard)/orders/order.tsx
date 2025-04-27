@@ -30,7 +30,21 @@ export function OrderFormDialog({
 }: OrderFormDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto"
+        onInteractOutside={(e) => {
+          // Allow closing with the X button but prevent accidental closing when clicking outside
+          if (e.target.closest('button[aria-label="Close"]')) {
+            return; // Don't prevent default for the close button
+          }
+          e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          // Enable Escape key to close the dialog
+          e.preventDefault();
+          onOpenChange(false);
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Edit Order' : 'Add New Order'}
@@ -43,20 +57,35 @@ export function OrderFormDialog({
         </DialogHeader>
         <form action={onSubmit} className="grid gap-5 py-4">
           {isEditing && (
-            <input type="hidden" name="orderId" value={currentOrder?.ID} />
+            <>
+              <input type="hidden" name="orderId" value={currentOrder?.ID} />
+              <input
+                type="hidden"
+                name="userId"
+                value={currentOrder?.UserId || ''}
+              />
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="userIdDisplay">User ID</Label>
+                <div className="p-2 bg-muted rounded-md">
+                  {currentOrder?.UserId}
+                </div>
+              </div>
+            </>
           )}
 
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="userId">User ID</Label>
-            <Input
-              id="userId"
-              name="userId"
-              type="text"
-              placeholder="User ID"
-              required
-              defaultValue={currentOrder?.UserId || ''}
-            />
-          </div>
+          {!isEditing && (
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="userId">User ID</Label>
+              <Input
+                id="userId"
+                name="userId"
+                type="text"
+                placeholder="User ID"
+                required
+                defaultValue={currentOrder?.UserId || ''}
+              />
+            </div>
+          )}
 
           <h3 className="text-lg font-semibold mt-4">Payment Information</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -312,32 +341,34 @@ export function OrderRow({ order, onEdit, onDelete }: OrderRowProps) {
 
 interface DeleteConfirmationDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  orderId?: number;
-  onConfirmDelete: () => Promise<void>;
+  setOpen: (open: boolean) => void;
+  onDelete: () => Promise<void>;
+  itemName: string;
+  itemType: string;
 }
 
 export function DeleteConfirmationDialog({
   open,
-  onOpenChange,
-  orderId,
-  onConfirmDelete
+  setOpen,
+  onDelete,
+  itemName,
+  itemType
 }: DeleteConfirmationDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Confirm Deletion</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete Order #{orderId}? This action cannot
-            be undone.
+            Are you sure you want to delete {itemName}? This action cannot be
+            undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={onConfirmDelete}>
+          <Button variant="destructive" onClick={onDelete}>
             Delete
           </Button>
         </DialogFooter>

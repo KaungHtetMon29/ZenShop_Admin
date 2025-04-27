@@ -32,9 +32,10 @@ import { Label } from '@/components/ui/label';
 
 interface RepairRowProps {
   repair: Repair;
+  onDataChange?: () => void;
 }
 
-export function RepairRow({ repair }: RepairRowProps) {
+export function RepairRow({ repair, onDataChange }: RepairRowProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -65,6 +66,7 @@ export function RepairRow({ repair }: RepairRowProps) {
   const handleDelete = async () => {
     await deleteRepair(repair.ID);
     setShowDeleteDialog(false);
+    if (onDataChange) onDataChange();
     router.refresh();
   };
 
@@ -72,6 +74,7 @@ export function RepairRow({ repair }: RepairRowProps) {
     formData.append('repairId', repair.ID.toString());
     await updateRepair(formData);
     setShowEditDialog(false);
+    if (onDataChange) onDataChange();
     router.refresh();
   };
 
@@ -79,6 +82,7 @@ export function RepairRow({ repair }: RepairRowProps) {
     formData.append('repairId', repair.ID.toString());
     await createRepairStatus(formData);
     setShowStatusDialog(false);
+    if (onDataChange) onDataChange();
     router.refresh();
   };
 
@@ -119,7 +123,17 @@ export function RepairRow({ repair }: RepairRowProps) {
                 <Edit className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent
+              onInteractOutside={(e) => {
+                // Prevent accidental closing when clicking outside
+                e.preventDefault();
+              }}
+              onEscapeKeyDown={(e) => {
+                // Enable Escape key to close the dialog
+                e.preventDefault();
+                setShowEditDialog(false);
+              }}
+            >
               <DialogHeader>
                 <DialogTitle>Edit Repair #{repair.ID}</DialogTitle>
               </DialogHeader>
@@ -190,7 +204,17 @@ export function RepairRow({ repair }: RepairRowProps) {
                 <ClipboardCheck className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent
+              onInteractOutside={(e) => {
+                // Prevent accidental closing when clicking outside
+                e.preventDefault();
+              }}
+              onEscapeKeyDown={(e) => {
+                // Enable Escape key to close the dialog
+                e.preventDefault();
+                setShowStatusDialog(false);
+              }}
+            >
               <DialogHeader>
                 <DialogTitle>Update Repair Status</DialogTitle>
               </DialogHeader>
@@ -240,7 +264,17 @@ export function RepairRow({ repair }: RepairRowProps) {
                 <Trash2 className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent
+              onInteractOutside={(e) => {
+                // Prevent accidental closing when clicking outside
+                e.preventDefault();
+              }}
+              onEscapeKeyDown={(e) => {
+                // Enable Escape key to close the dialog
+                e.preventDefault();
+                setShowDeleteDialog(false);
+              }}
+            >
               <DialogHeader>
                 <DialogTitle>Delete Repair</DialogTitle>
               </DialogHeader>

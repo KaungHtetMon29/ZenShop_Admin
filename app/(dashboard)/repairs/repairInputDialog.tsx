@@ -22,7 +22,11 @@ import {
 import { createRepair } from './repairAction';
 import { Label } from '@/components/ui/label';
 
-export function RepairInputDialog() {
+interface RepairInputDialogProps {
+  onSuccess?: () => void;
+}
+
+export function RepairInputDialog({ onSuccess }: RepairInputDialogProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,6 +34,7 @@ export function RepairInputDialog() {
     setIsSubmitting(true);
     try {
       await createRepair(formData);
+      if (onSuccess) onSuccess();
       router.refresh();
     } catch (error) {
       console.error('Failed to create repair:', error);
@@ -39,7 +44,18 @@ export function RepairInputDialog() {
   }
 
   return (
-    <DialogContent className="sm:max-w-[500px]">
+    <DialogContent
+      className="sm:max-w-[500px]"
+      onInteractOutside={(e) => {
+        // Prevent accidental closing when clicking outside
+        e.preventDefault();
+      }}
+      onEscapeKeyDown={(e) => {
+        // Enable Escape key to close the dialog
+        e.preventDefault();
+        // The Dialog root component in the parent will handle the actual closing
+      }}
+    >
       <DialogHeader>
         <DialogTitle>Add New Repair</DialogTitle>
         <DialogDescription>

@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import React from 'react';
@@ -25,25 +25,48 @@ export function DataTable({
   label,
   description,
   fields,
-  offset,
-  totalProducts
+  offset = 0,
+  totalProducts = 0,
+  limit = 5
 }: {
   children: React.ReactNode;
   label: string;
   description: string;
   fields: string[];
-  offset: number;
-  totalProducts: number;
+  offset?: number;
+  totalProducts?: number;
+  limit?: number;
 }) {
-  let router = useRouter();
-  let productsPerPage = 5;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Current page calculation
+  const currentPage = Math.ceil(offset / limit) || 1;
+  const totalPages = Math.ceil(totalProducts / limit);
+
+  function createQueryString(name: string, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(name, value);
+    return params.toString();
+  }
 
   function prevPage() {
-    router.back();
+    if (currentPage <= 1) return;
+    const prevPageNumber = currentPage - 1;
+    const page = prevPageNumber.toString();
+    router.push(`${pathname}?${createQueryString('page', page)}`, {
+      scroll: false
+    });
   }
 
   function nextPage() {
-    router.push(`/?offset=${offset}`, { scroll: false });
+    if (currentPage >= totalPages) return;
+    const nextPageNumber = currentPage + 1;
+    const page = nextPageNumber.toString();
+    router.push(`${pathname}?${createQueryString('page', page)}`, {
+      scroll: false
+    });
   }
 
   return (
@@ -65,41 +88,40 @@ export function DataTable({
         </Table>
       </CardContent>
       <CardFooter>
-        <form className="flex items-center w-full justify-between">
+        <div className="flex items-center w-full justify-between">
           <div className="text-xs text-muted-foreground">
             Showing{' '}
             <strong>
-              {Math.max(
-                0,
-                Math.min(offset - productsPerPage, totalProducts) + 1
-              )}
-              -{offset}
+              {totalProducts === 0
+                ? '0'
+                : `${(currentPage - 1) * limit + 1}-${Math.min(
+                    currentPage * limit,
+                    totalProducts
+                  )}`}
             </strong>{' '}
-            of <strong>{totalProducts}</strong> products
+            of <strong>{totalProducts}</strong> items
           </div>
           <div className="flex">
             <Button
-              formAction={prevPage}
+              onClick={prevPage}
               variant="ghost"
               size="sm"
-              type="submit"
-              disabled={offset === productsPerPage}
+              disabled={currentPage <= 1}
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
               Prev
             </Button>
             <Button
-              formAction={nextPage}
+              onClick={nextPage}
               variant="ghost"
               size="sm"
-              type="submit"
-              disabled={offset + productsPerPage > totalProducts}
+              disabled={currentPage >= totalPages}
             >
               Next
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
-        </form>
+        </div>
       </CardFooter>
     </Card>
   );
